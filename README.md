@@ -23,6 +23,7 @@
 
 Файлы библиотек RTCMultiConnection и Firebase лежат рядом, потому что стабильность серверов гитхаба лучше, чем сайта, откуда я их взял.
 
+[![YouTube](http://img.youtube.com/vi/GoITwdFTjBY/1.jpg)](http://www.youtube.com/watch?v=GoITwdFTjBY) - смотреть краткий обзор на Youtube
 Установка
 --
    - Установите дополнение соответственно вашему браузеру (см. Требования к ПО)

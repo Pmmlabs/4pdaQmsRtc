@@ -5,8 +5,8 @@
 // @namespace      https://greasyfork.org/users/23
 // @author         kilowatt36@4pda.ru
 // @description    Добавляет возможность передачи файлов напрямую между пользователями на сайте 4pda.ru
-// @require        http://www.webrtc-experiment.com/firebase.js
-// @require        http://www.webrtc-experiment.com/RTCMultiConnection-v1.7.js
+// @require        http://raw.githubusercontent.com/Pmmlabs/4pdaQmsRtc/master/firebase.js
+// @require        http://raw.githubusercontent.com/Pmmlabs/4pdaQmsRtc/master/RTCMultiConnection-v1.7.js
 // @include        http://4pda.ru/forum/index.php?act=qms*
 // @run-at         document-end
 // ==/UserScript==
