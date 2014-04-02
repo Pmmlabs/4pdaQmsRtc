@@ -171,7 +171,7 @@ function inject_FbFunctions(funcnum) {
 }
 
 for (i=1; i<8; i++) inject_FbFunctions(i);
-console.log('main');
+
 // Если пользователь зашел сразу на страницу диалога или выбора темы, то сразу создаем соединение.	
 if (location.href.indexOf("&mid=") != -1) {
 	createConnection(location.href.split("&mid=")[1].split("&")[0]);
