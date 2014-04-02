@@ -160,27 +160,32 @@ function printToChat(title, text) {// добавление ложного "но�
    Создает в документе скрытый iframe и грузит туда скрипт, вызывающий parent.window["somefunc"]
    Просто офигеть. Так что надо сделать перенаправлялочку для этих функций. (требуется только для работоспособности в юзерскрипте)
 */
-function inject_FbFunctions(funcname) {	
-	if (typeof(window[funcname]) == 'function') {
-		unsafeWindow.window[funcname] = window[funcname];
-		//console.log(funcname+" ready");
+function inject_FbFunctions(funcnum) {	
+	if (typeof(window["pLPCommand"+funcnum]) == 'function' && typeof(window["pRTLPCB"+funcnum]) == 'function') {
+		unsafeWindow.window["pLPCommand"+funcnum] = window["pLPCommand"+funcnum];
+		unsafeWindow.window["pRTLPCB"+funcnum] = window["pRTLPCB"+funcnum];
+		//console.log(funcnum+" ready");
 	}
 	else
-		setTimeout(function(){inject_FbFunctions(funcname);},50);
+		setTimeout(function(){inject_FbFunctions(funcnum);},50);
 }
 
-firebase_functions = ["pLPCommand1","pRTLPCB1","pLPCommand2","pRTLPCB2","pLPCommand3","pRTLPCB3","pLPCommand4","pRTLPCB4","pLPCommand5","pRTLPCB5","pLPCommand6","pRTLPCB6","pLPCommand7","pRTLPCB7"];
-for (i in firebase_functions) 
-	inject_FbFunctions(firebase_functions[i]);
-
-// Если пользователь зашел сразу на страницу с диалогом, то сразу создаем соединение.	
-if (location.href.indexOf("&t=") != -1) {
-	createConnection(location.href.split("&t=")[1].split("&")[0]);
-	HangHandlers_dialog();
-} 
+for (i=1; i<8; i++) inject_FbFunctions(i);
+console.log('main');
+// Если пользователь зашел сразу на страницу диалога или выбора темы, то сразу создаем соединение.	
+if (location.href.indexOf("&mid=") != -1) {
+	createConnection(location.href.split("&mid=")[1].split("&")[0]);
+	if (location.href.indexOf("&t=") != -1) {
+		HangHandlers_dialog();
+	} else {
+		HangHandlers_topicchoise();
+	}
+} else {
+	createConnection('4pda-temp');
+}
 
 // При щелчке на пользователя слева пусть создается соединение с этим пользователем.
-  $('#contacts .list-group-item.text-overflow').each(function(){
+$('#contacts .list-group-item.text-overflow').each(function(){
 	$(this).click(function() { // Щелчок по имени пользователя
 		peer = $(this).attr('data-member-id');
 		createConnection(peer);
