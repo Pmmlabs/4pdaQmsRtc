@@ -1,26 +1,53 @@
 // ==UserScript==
 // @id             4pda.ru-QMS-RTC@scriptish
 // @name           4pdaQmsRtc
-// @version        1.0
+// @version        1.2
 // @namespace      https://greasyfork.org/users/23
 // @author         kilowatt36@4pda.ru
 // @description    Добавляет возможность передачи файлов напрямую между пользователями на сайте 4pda.ru
-// @require        https://raw.githubusercontent.com/Pmmlabs/4pdaQmsRtc/master/firebase.js
-// @require        https://raw.githubusercontent.com/Pmmlabs/4pdaQmsRtc/master/RTCMultiConnection-v1.7.js
+// @require        https://cdn.firebase.com/js/client/1.0.6/firebase.js
+// @require        https://greasyfork.org/scripts/348/code.user.js
 // @include        http://4pda.ru/forum/index.php?act=qms*
 // @run-at         document-end
 // ==/UserScript==
 
-$ = unsafeWindow.$;			// нужен jQuery именно из библиотеки QMS, потому что потребуется управлять событиями, связанными с ajax
+var $ = unsafeWindow.$;			// нужен jQuery именно из библиотеки QMS, потому что потребуется управлять событиями, связанными с ajax
 window.Firebase = Firebase; // в библиотеке RTCMultiConnection автор обращается не к Firebase, а к window.Firebase. Так что вот так.
 var connection;
 var iwanttosendfile = false;
 var sessions = { };
 var progressHelper = { };
 
+function printToChat(title, text) {// добавление ложного "нового сообщения" в чат
+	var new_row = $(
+		'<div data-toggle="checkbox" class="list-group-item">'+
+		'<label class="check-item">'+
+			'<input type="checkbox" data-toggle="class" data-event="change" data-event-init="1">'+
+			'<span class="checkbox">'+
+				'<i class="icon-uncheck"></i>'+
+				'<i class="icon-check"></i>'+
+			'</span>'+
+		'</label>'+
+		'<div class="time"><b class="read-status read big-dot"></b> '+(new Date())+' </div> <div class="avatar-wrap"><img alt="" class="avatar" data-scroll-init-load="1"></div> '+
+			'<strong><span style="color:#FF9900">'+title+'</span></strong><br>'+
+			'<div class="msg-content emoticons">'+
+				(typeof text === 'string' ? text : '')+
+			'</div>'+
+		'</div>'
+	);
+	if (typeof text !== 'string') new_row.find('.msg-content').append(text);			
+	
+	$('#scroll-thread .scrollframe-body .list-group-item').last().after(new_row);
+		
+	var pieces = $('#scroll-thread .scrollframe-body').css('transform').split(' ');	// нужно
+	pieces[5]=(pieces[5].split(')')[0] - 50)+')';									// для
+	$('#scroll-thread .scrollframe-body').css('transform',pieces.join(' '));		// прокрутки
+}
+
+
 function HangHandlers_dialog() {						// Создать UI и повесить все необходимые обработчики на экране диалога
-	inputFile = $('<input id="4pdaQmsRTC" type=file />');
-	button = $('<button id="4pdaQmsRTCbutton">Отправить</button>');
+	var inputFile = $('<input id="4pdaQmsRTC" type=file />');
+	var button = $('<button id="4pdaQmsRTCbutton">Отправить</button>');
 	$('#btn-bb-codes').before('Отправить файл: ').before(inputFile).before(button);
 	button.click(function() { // Нажатие на кнопку "отправить"						
 		if (Object.getOwnPropertyNames(connection.peers).length === 1) { // Если еще ни одной сессии не было создано, создание сессии, после которой автоматом пойдет отправка файла
@@ -96,6 +123,11 @@ function createConnection(peer) {						// создание нового connecti
 		//console.log('connection.onopen');
 	};
 	
+	function updateLabel(progress, label) {
+		if (progress.position == -1) return;
+		var position = +progress.position.toFixed(2).split('.')[1] || 100;
+		label.innerHTML = position + '%';
+	}
 	connection.onFileProgress = function(chunk) {
 		var helper = progressHelper[chunk.uuid];
 		helper.progress.value = chunk.currentPosition || chunk.maxChunks || helper.progress.max;
@@ -119,40 +151,11 @@ function createConnection(peer) {						// создание нового connecti
 		progressHelper[file.uuid].div.innerHTML = '<a href="' + file.url + '" target="_blank" download="' + file.name + '">' + file.name + '</a>';
 	};
 
-	function updateLabel(progress, label) {
-		if (progress.position == -1) return;
-		var position = +progress.position.toFixed(2).split('.')[1] || 100;
-		label.innerHTML = position + '%';
-	}
+
 
 	connection.connect(connection.channel); 
 }
 
-function printToChat(title, text) {// добавление ложного "нового сообщения" в чат
-	var new_row = $(
-		'<div data-toggle="checkbox" class="list-group-item">'+
-		'<label class="check-item">'+
-			'<input type="checkbox" data-toggle="class" data-event="change" data-event-init="1">'+
-			'<span class="checkbox">'+
-				'<i class="icon-uncheck"></i>'+
-				'<i class="icon-check"></i>'+
-			'</span>'+
-		'</label>'+
-		'<div class="time"><b class="read-status read big-dot"></b> '+(new Date())+' </div> <div class="avatar-wrap"><img alt="" class="avatar" data-scroll-init-load="1"></div> '+
-			'<strong><span style="color:#FF9900">'+title+'</span></strong><br>'+
-			'<div class="msg-content emoticons">'+
-				(typeof text === 'string' ? text : '')+
-			'</div>'+
-		'</div>'
-	);
-	if (typeof text !== 'string') new_row.find('.msg-content').append(text);			
-	
-	$('#scroll-thread .scrollframe-body .list-group-item').last().after(new_row);
-		
-	var pieces = $('#scroll-thread .scrollframe-body').css('transform').split(' ');	// нужно
-	pieces[5]=(pieces[5].split(')')[0] - 50)+')'									// для
-	$('#scroll-thread .scrollframe-body').css('transform',pieces.join(' '));		// прокрутки
-}
 
 ///////////////////////////////		MAIN	////////////////////////////////////////////
 
@@ -170,7 +173,7 @@ function inject_FbFunctions(funcnum) {
 		setTimeout(function(){inject_FbFunctions(funcnum);},50);
 }
 
-for (i=1; i<8; i++) inject_FbFunctions(i);
+for (var i=1; i<8; i++) { inject_FbFunctions(i); }
 
 // Если пользователь зашел сразу на страницу диалога или выбора темы, то сразу создаем соединение.	
 if (location.href.indexOf("&mid=") != -1) {
@@ -187,8 +190,8 @@ if (location.href.indexOf("&mid=") != -1) {
 // При щелчке на пользователя слева пусть создается соединение с этим пользователем.
 $('#contacts .list-group-item.text-overflow').each(function(){
 	$(this).click(function() { // Щелчок по имени пользователя
-		peer = $(this).attr('data-member-id');
+		var peer = $(this).attr('data-member-id');
 		createConnection(peer);
-		if (peer > 0) HangHandlers_topicchoise();
+		if (peer > 0) { HangHandlers_topicchoise(); }
 	});
 });
